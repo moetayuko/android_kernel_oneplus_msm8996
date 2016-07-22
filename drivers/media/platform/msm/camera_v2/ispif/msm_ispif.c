@@ -1043,7 +1043,6 @@ static int msm_ispif_stop_immediately(struct ispif_device *ispif,
 			cid_mask, params->entries[i].vfe_intf, 0);
 	}
 
-	rc = msm_ispif_reset_hw(ispif);
 	return rc;
 }
 
@@ -1170,7 +1169,6 @@ static int msm_ispif_stop_frame_boundary(struct ispif_device *ispif,
 	}
 
 end:
-	rc = msm_ispif_reset_hw(ispif);
 	return rc;
 }
 
