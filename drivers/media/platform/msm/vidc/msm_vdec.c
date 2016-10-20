@@ -1264,8 +1264,6 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 
 		inst->prop.width[CAPTURE_PORT] = f->fmt.pix_mp.width;
 		inst->prop.height[CAPTURE_PORT] = f->fmt.pix_mp.height;
-		msm_comm_set_color_format(inst, HAL_BUFFER_OUTPUT,
-			f->fmt.pix_mp.pixelformat);
 
 		if (msm_comm_get_stream_output_mode(inst) ==
 			HAL_VIDEO_DECODER_SECONDARY) {
@@ -1280,6 +1278,9 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 				frame_sz.height);
 			ret = msm_comm_try_set_prop(inst,
 				HAL_PARAM_FRAME_SIZE, &frame_sz);
+		} else {
+			msm_comm_set_color_format(inst, HAL_BUFFER_OUTPUT,
+				f->fmt.pix_mp.pixelformat);
 		}
 
 		f->fmt.pix_mp.plane_fmt[0].sizeimage =
