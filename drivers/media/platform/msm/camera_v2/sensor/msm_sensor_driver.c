@@ -194,6 +194,7 @@ static int32_t msm_sensor_fill_eeprom_subdevid_by_name(
 	 * string for eeprom name is valid, set sudev id to -1
 	 *  and try to found new id
 	 */
+	*eeprom_subdev_id = -1;
 
 	if (0 == eeprom_name_len)
 		return 0;
@@ -202,7 +203,6 @@ static int32_t msm_sensor_fill_eeprom_subdevid_by_name(
 	if (!p || !count)
 		return 0;
 
-	*eeprom_subdev_id = -1;
 	count /= sizeof(uint32_t);
 	for (i = 0; i < count; i++) {
 		userspace_probe = 0;

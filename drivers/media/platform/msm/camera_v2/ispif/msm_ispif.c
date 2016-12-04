@@ -281,7 +281,6 @@ static long msm_ispif_subdev_ioctl(struct v4l2_subdev *sd,
 	return msm_ispif_subdev_ioctl_unlocked(sd, cmd, arg);
 }
 #endif
-
 static void msm_ispif_put_regulator(struct ispif_device *ispif_dev)
 {
 	int i;
@@ -560,7 +559,6 @@ alloc_fail:
 static int msm_ispif_clk_ahb_enable(struct ispif_device *ispif, int enable)
 {
 	int rc = 0;
-
 
 	rc = msm_cam_clk_enable(&ispif->pdev->dev,
 		ispif->ahb_clk_info, ispif->ahb_clk,

@@ -171,7 +171,7 @@ void msm_cpp_vbif_register_error_handler(void *dev,
 	int (*client_vbif_error_handler)(void *, uint32_t))
 {
 	if (dev == NULL || client >= VBIF_CLIENT_MAX) {
-		pr_err("%s: Fail to register handler! dev = %p, client %d\n",
+		pr_err("%s: Fail to register handler! dev = %pK,client %d\n",
 			__func__, dev, client);
 		return;
 	}
@@ -1068,7 +1068,7 @@ int cpp_vbif_error_handler(void *dev, uint32_t vbif_error)
 	struct cpp_device *cpp_dev = NULL;
 
 	if (dev == NULL || vbif_error >= CPP_VBIF_ERROR_MAX) {
-		pr_err("failed: dev %p, vbif error %d\n", dev, vbif_error);
+		pr_err("failed: dev %pK,vbif error %d\n", dev, vbif_error);
 		return -EINVAL;
 	}
 
