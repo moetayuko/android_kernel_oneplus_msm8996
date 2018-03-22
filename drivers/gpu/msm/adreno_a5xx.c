@@ -2231,6 +2231,8 @@ static int a5xx_microcode_load(struct adreno_device *adreno_dev)
 			zap_name = adreno_dev->gpucore->zap_name;
 		if (zap_name)
 			ptr = subsystem_get(zap_name);
+		else
+			return 0;
 
 		/* Return error if the zap shader cannot be loaded */
 		if (IS_ERR_OR_NULL(ptr))
