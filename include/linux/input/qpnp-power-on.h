@@ -59,6 +59,8 @@ enum pon_restart_reason {
 	PON_RESTART_REASON_DMVERITY_CORRUPTED	= 0x04,
 	PON_RESTART_REASON_DMVERITY_ENFORCE	= 0x05,
 	PON_RESTART_REASON_KEYS_CLEAR		= 0x06,
+	/* add by yangrujin@bsp 2016/4/5, add op feature restart reason*/
+	PON_RESTART_REASON_REBOOT       = 0x10,
 
 	/* 32 ~ 63 for OEMs/ODMs secific features */
 	PON_RESTART_REASON_OEM_MIN		= 0x20,
