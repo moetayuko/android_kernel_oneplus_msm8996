@@ -38,7 +38,7 @@
 #include <linux/of_gpio.h>
 #endif
 #include <linux/wakelock.h>
-#include "oem_external_fg.h"
+#include <linux/power/oem_external_fg.h>
 
 #define DRIVER_VERSION			"1.1.0"
 /* Bq27541 standard data commands */
@@ -931,7 +931,7 @@ static int is_usb_pluged(void)
 		}
 	}
 
-	if (psy->get_property(psy, POWER_SUPPLY_PROP_CHARGE_NOW, &ret))
+	if (power_supply_get_property(psy, POWER_SUPPLY_PROP_CHARGE_NOW, &ret))
 		return -EINVAL;
 
 	if (ret.intval <= 0)
@@ -989,7 +989,7 @@ static int set_property_on_fg(enum power_supply_property prop, int val)
 	}
 
 	ret.intval = val;
-	rc = bms_psy->set_property(bms_psy, prop, &ret);
+	rc = power_supply_set_property(bms_psy, prop, &ret);
 	if (rc)
 		pr_err("bms psy does not allow updating prop %d rc = %d\n",prop, rc);
 
@@ -1353,10 +1353,10 @@ static int bq27541_battery_remove(struct i2c_client *client)
 	return 0;
 }
 
-static int bq27541_battery_suspend(struct i2c_client *client, pm_message_t message)
+static int bq27541_battery_suspend(struct device *dev)
 {
 	int ret=0;
-	struct bq27541_device_info *di = i2c_get_clientdata(client);
+	struct bq27541_device_info *di = dev_get_drvdata(dev);
 	cancel_delayed_work_sync(&di->battery_soc_work);
 	atomic_set(&di->suspended, 1);
 	ret = get_current_time(&di->rtc_suspend_time);
@@ -1369,11 +1369,11 @@ static int bq27541_battery_suspend(struct i2c_client *client, pm_message_t messa
 
 /*1 minute*/
 #define RESUME_TIME  1*60
-static int bq27541_battery_resume(struct i2c_client *client)
+static int bq27541_battery_resume(struct device *dev)
 {
 	int ret=0;
 	int suspend_time;
-	struct bq27541_device_info *di = i2c_get_clientdata(client);
+	struct bq27541_device_info *di = dev_get_drvdata(dev);
 	atomic_set(&di->suspended, 0);
 	ret = get_current_time(&di->rtc_resume_time);
 	if (ret ) {
@@ -1419,15 +1419,17 @@ static const struct i2c_device_id bq27541_id[] = {
 	{},
 };
 MODULE_DEVICE_TABLE(i2c, BQ27541_id);
+static const struct dev_pm_ops bq27541_pm = {
+	SET_SYSTEM_SLEEP_PM_OPS(bq27541_battery_suspend, bq27541_battery_resume)
+};
 
 static struct i2c_driver bq27541_battery_driver = {
 	.driver		= {
 		.name = "bq27541-battery",
+		.pm = &bq27541_pm,
 	},
 	.probe		= bq27541_battery_probe,
 	.remove		= bq27541_battery_remove,
-	.suspend	= bq27541_battery_suspend ,
-	.resume		= bq27541_battery_resume,
 	.shutdown	= bq27541_shutdown,
 	.id_table	= bq27541_id,
 };

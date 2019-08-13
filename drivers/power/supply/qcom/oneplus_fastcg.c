@@ -16,7 +16,7 @@
 #include <linux/power_supply.h>
 #include <linux/wakelock.h>
 #include <linux/interrupt.h>
-#include "oem_external_fg.h"
+#include <linux/power/oem_external_fg.h>
 
 #include <soc/qcom/clock-rpm.h>
 #include <dt-bindings/clock/msm-clocks-8996.h>
@@ -138,7 +138,7 @@ static int set_property_on_smbcharger(enum power_supply_property prop,bool data)
 			return -EINVAL;
 		}
 	}
-	if (psy->set_property(psy, prop,&value))
+	if (power_supply_set_property(psy, prop,&value))
 		return -EINVAL;
 
 	return 0;

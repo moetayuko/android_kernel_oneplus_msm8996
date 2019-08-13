@@ -1090,8 +1090,9 @@ static struct of_device_id pn544_i2c_dt_match[] = {
 };
 #endif
 /*NFC CLK_REQ*/
-static int pn544_suspend(struct i2c_client *client, pm_message_t message)
-{   
+static int pn544_suspend(struct device *device)
+{
+    struct i2c_client *client = to_i2c_client(device);
 	struct pn544_dev *pn544_dev = i2c_get_clientdata(client);
     
     printk("%s pn544_dev->clk_gpio = %d\n", __func__, gpio_get_value(pn544_dev->clk_gpio));	
@@ -1102,7 +1103,7 @@ static int pn544_suspend(struct i2c_client *client, pm_message_t message)
 	return 0;
 }
 
-static int pn544_resume(struct i2c_client *client)
+static int pn544_resume(struct device *device)
 {
 	//struct pn544_dev *pn544_dev = i2c_get_clientdata(client);
     
@@ -1112,19 +1113,21 @@ static int pn544_resume(struct i2c_client *client)
 	return 0;
 }
 
+static const struct dev_pm_ops nfc_pm_ops = {
+    SET_SYSTEM_SLEEP_PM_OPS(pn544_suspend, pn544_resume)
+};
 
 static struct i2c_driver pn544_driver = {
         .id_table   = pn544_id,
         .probe      = pn544_probe,
         .remove     = pn544_remove, /*NFC CLK_REQ*/
-		.suspend	= pn544_suspend, /*NFC CLK_REQ*/     
-	    .resume		= pn544_resume,
         .driver     = {
                 .owner = THIS_MODULE,
                 .name  = "pn544",
 #if DRAGON_NFC
                 .of_match_table = pn544_i2c_dt_match,
 #endif
+                .pm = &nfc_pm_ops,
         },
 };
 /* End, NFC CLK_REQ*/

@@ -5357,6 +5357,7 @@ static void smbchg_re_det_chg_type(struct smbchg_chip  *chip)
 {
 	int vbus_mv, rc = 0;
 	bool charger_present;
+	union power_supply_propval pval = {0, };
 
 	pr_err("Re-detect charger type\n");
 	chip->usb_type_redetecting = true;
@@ -5384,7 +5385,9 @@ static void smbchg_re_det_chg_type(struct smbchg_chip  *chip)
 	charger_present = (vbus_mv > 2500) ? true : false; /* vbus > 2.5v */
 	if (charger_present != chip->usb_online) {
 		chip->usb_online = charger_present;
-		power_supply_set_online(chip->usb_psy, chip->usb_online);
+		pval.intval = chip->usb_online;
+		rc = power_supply_set_property(chip->usb_psy,
+				POWER_SUPPLY_PROP_ONLINE, &pval);
 		pr_err("redetect done, set usb online = %d\n",chip->usb_online);
 	}
 }
@@ -9607,6 +9610,7 @@ static void check_non_standard_charger_work(struct work_struct *work)
 	enum power_supply_type usb_supply_type;
 	char *usb_type_name = "null";
 	int aicl_limited_current, rc = 0;
+	union power_supply_propval pval = {0,};
 
 	read_usb_type(chip, &usb_type_name, &usb_supply_type);
 	if ((usb_supply_type == POWER_SUPPLY_TYPE_USB
@@ -9627,10 +9631,12 @@ static void check_non_standard_charger_work(struct work_struct *work)
 				pr_err("Couldn't set %dmA rc = %d\n", aicl_limited_current, rc);
 		}
 
-		power_supply_set_supply_type(chip->usb_psy,
-				POWER_SUPPLY_TYPE_USB_DCP);
+		pval.intval = POWER_SUPPLY_TYPE_USB_DCP;
+		power_supply_set_property(chip->usb_psy,
+				POWER_SUPPLY_PROP_TYPE, &pval);
 		chip->is_power_changed = true;
-		power_supply_changed(&chip->batt_psy);
+		if (chip->batt_psy)
+			power_supply_changed(chip->batt_psy);
 		pr_err("non-standard_charger detected, GPIO135=%d,aicl_limited_current=%d\n",
 				gpio_get_value(135),aicl_limited_current);
 		chip->non_std_chg_present = true;
@@ -9656,7 +9662,8 @@ static void update_heartbeat(struct work_struct *work)
 		goto out;
 
 	/* charger present */
-	power_supply_changed(&chip->batt_psy);
+	if (chip->batt_psy)
+		power_supply_changed(chip->batt_psy);
 	chip->dash_on = get_prop_fast_chg_started(chip);
 	if (chip->dash_on) {
 		switch_fast_chg(chip);
@@ -9780,7 +9787,7 @@ static void clear_backup_soc(struct smbchg_chip *chip)
 	int rc = 0;
 	u8 soc_temp = 0;
 
-	rc = smbchg_write(chip, &soc_temp, SOC_DATA_REG_0, 1);
+	rc = regmap_write(chip->regmap, SOC_DATA_REG_0, soc_temp);
 	if (rc)
 		pr_err("failed to clean addr[0x%x], rc=%d\n",
 				SOC_DATA_REG_0, rc);
@@ -9800,7 +9807,7 @@ static void backup_soc(struct smbchg_chip *chip, int soc)
 	if (!chip || soc < 0 || soc > 100) {
 		pr_err("chip or soc invalid, store an invalid soc\n");
 		if (chip) {
-			rc = smbchg_write(chip, &invalid_soc, SOC_DATA_REG_0, 1);
+			rc = regmap_write(chip->regmap, SOC_DATA_REG_0, invalid_soc);
 			if (rc)
 				pr_err("failed to write addr[0x%x], rc=%d\n",
 						SOC_DATA_REG_0, rc);
@@ -9809,7 +9816,7 @@ static void backup_soc(struct smbchg_chip *chip, int soc)
 	}
 
 	pr_err("backup_soc[%d]\n", soc);
-	rc = smbchg_write(chip, &soc_temp, SOC_DATA_REG_0, 1);
+	rc = regmap_write(chip->regmap, SOC_DATA_REG_0, soc_temp);
 	if (rc)
 		pr_err("failed to write addr[0x%x], rc=%d\n",
 				SOC_DATA_REG_0, rc);
@@ -9845,22 +9852,26 @@ static int set_dash_charger_present(int status)
 {
 	int charger_present;
 	bool pre_dash_present;
+	union power_supply_propval pval = {0,};
 
 	if (g_chip) {
 		pre_dash_present = g_chip->dash_present;
 		charger_present = is_usb_present(g_chip) | is_dc_present(g_chip);
 		g_chip->dash_present = status && charger_present;
 		if (g_chip->dash_present && !pre_dash_present) {
-			power_supply_set_online(g_chip->usb_psy, true);
 			pr_info("set dash online\n");
-			power_supply_set_supply_type(g_chip->usb_psy, POWER_SUPPLY_TYPE_DASH);
-			power_supply_set_current_limit(g_chip->usb_psy, DEFAULT_WALL_CHG_MA * 1000);
+			pval.intval = POWER_SUPPLY_TYPE_DASH;
+			power_supply_set_property(g_chip->usb_psy,
+					POWER_SUPPLY_PROP_TYPE, &pval);
+			pval.intval = DEFAULT_WALL_CHG_MA * 1000;
+			power_supply_set_property(g_chip->usb_psy,
+					POWER_SUPPLY_PROP_CURRENT_MAX, &pval);
 #ifdef PARAM_READY
 			schedule_delayed_work(&g_chip->charger_type_record_work,
 			msecs_to_jiffies(PARAM_CHG_RECORD_DELAY_MS));
 #endif
 		}
-		power_supply_changed(&g_chip->batt_psy);
+		power_supply_changed(g_chip->batt_psy);
 		pr_info("dash_present = %d, charger_present = %d\n",
 				g_chip->dash_present, charger_present);
 	} else {

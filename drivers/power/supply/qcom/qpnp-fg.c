@@ -6049,7 +6049,7 @@ static int get_property_from_smb(struct fg_chip *chip,
 		return -EINVAL;
 	}
 
-	rc = chip->batt_psy->get_property(chip->batt_psy, prop, &ret);
+	rc = power_supply_get_property(chip->batt_psy, prop, &ret);
 	if (rc) {
 		pr_info("bms psy doesn't support reading prop %d rc = %d\n",
 			prop, rc);

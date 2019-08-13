@@ -1224,8 +1224,8 @@
 			qcom,msm-mi2s-ext-mclk = <0>;
 			pinctrl-names = "default", "sleep";
 
-			pinctrl-0 = <&quat_mi2s_active  &quat_mi2s_sd0_active &quat_mi2s_sd1_active >;
-			pinctrl-1 = <&quat_mi2s_sleep  &quat_mi2s_sd0_sleep &quat_mi2s_sd1_sleep >;
+			pinctrl-0 = <&quat_mi2s_active  &quat_mi2s_sd0_active &quat_tdm_dout_active>;
+			pinctrl-1 = <&quat_mi2s_sleep  &quat_mi2s_sd0_sleep &quat_tdm_dout_sleep>;
 		};
 	};
 };
@@ -1623,6 +1623,34 @@
 				drive-strength = <6>;
 				bias-disable;
 				output-high;
+			};
+		};
+	};
+
+	i2c_3 { /* BLSP1 QUP3 */
+		i2c_3_active: i2c_3_active {
+			mux {
+				pins = "gpio47", "gpio48";
+				function = "blsp_i2c3";
+			};
+
+			config {
+				pins = "gpio47", "gpio48";
+				drive-strength = <2>;
+				bias-disable;
+			};
+		};
+
+		i2c_3_sleep: i2c_3_sleep {
+			mux {
+				pins = "gpio47", "gpio48";
+				function = "blsp_i2c3";
+			};
+
+			config {
+				pins = "gpio47", "gpio48";
+				drive-strength = <2>;
+				bias-pull-up;
 			};
 		};
 	};

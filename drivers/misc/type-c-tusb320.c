@@ -550,8 +550,10 @@ static void tusb320_otg_work(struct work_struct *work)
 {
     struct tusb320_info *info = container_of(work, struct tusb320_info, otg_work);
     bool otg_present = !gpio_get_value(info->ID_gpio);
+	union power_supply_propval pval = {0, };
     dev_err(&info->i2c->dev,"%s : otg_present = (%d)\n",__func__,otg_present);
-    power_supply_set_usb_otg(info->usb_psy, otg_present ? 1 : 0);
+	pval.intval = otg_present ? 1 : 0;
+	power_supply_set_property(info->usb_psy, POWER_SUPPLY_PROP_USB_OTG, &pval);
 }
 
 static irqreturn_t tusb320_otg_irq_thread(int irq, void *handle)
@@ -659,6 +661,7 @@ static struct tusb320_info *ginfo;
 static int tusb320_power_down_callback(
         struct notifier_block *nfb, unsigned long action, void *data)
 {
+	union power_supply_propval pval = {0, };
     if(ginfo == NULL){
         return NOTIFY_OK;
     }
@@ -672,7 +675,9 @@ static int tusb320_power_down_callback(
         free_irq(ginfo->OTG_USB_ID_irq, ginfo);
         //set to UFP to get a chance to make sure get charging from other DRP typeC device
         tusb320_write_reg(ginfo->i2c, REG_MOD, 0x10);//0x0a,0x10  MOD_SNK
-        power_supply_set_usb_otg(ginfo->usb_psy, 0);
+		pval.intval = 0;
+		power_supply_set_property(ginfo->usb_psy,
+				POWER_SUPPLY_PROP_USB_OTG, &pval);
         break;
     default:
         return NOTIFY_DONE;
@@ -825,12 +830,12 @@ static int tusb320_remove(struct i2c_client *client)
 }
 
 
-static int  tusb320_suspend(struct i2c_client *client, pm_message_t message)
+static int  tusb320_suspend(struct device *device)
 {
 	return 0;
 }
 
-static int  tusb320_resume(struct i2c_client *client)
+static int  tusb320_resume(struct device *device)
 {
 	return 0;
 }
@@ -847,15 +852,18 @@ static const struct i2c_device_id tusb320_i2c_id[] = {
 	{ }
 };
 
+static const struct dev_pm_ops tusb320_pm_ops = {
+    SET_SYSTEM_SLEEP_PM_OPS(tusb320_suspend, tusb320_resume)
+};
+
 static struct i2c_driver tusb320_i2c_driver = {
 	.driver = {
 		.name = "tusb320",
 		.of_match_table = of_match_ptr(tusb320_id),
+		.pm = &tusb320_pm_ops,
 	},
 	.probe    = tusb320_probe,
 	.remove   = tusb320_remove,
-	.suspend  = tusb320_suspend,
-	.resume	  = tusb320_resume,
 	.id_table = tusb320_i2c_id,
 };
 

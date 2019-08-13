@@ -303,7 +303,7 @@ static int get_and_evaluate_battery_soc(void)
 	if (!usb_psy)
 		usb_psy = power_supply_get_by_name("usb");
 	if (usb_psy) {
-		usb_state = usb_psy->get_property(usb_psy,
+		usb_state = power_supply_get_property(usb_psy,
 				POWER_SUPPLY_PROP_PRESENT, &ret);
 		if (usb_state == 0)
 			is_usb_present = ret.intval;
